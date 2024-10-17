@@ -13,6 +13,10 @@ C_SRCS=resnet.cpp
 C_OBJS=obj/resnet.o
 C_TARGET=bin/resnet_c
 
+NPU_SRCS=cim.cpp
+NPU_OBJS=obj/cim.o
+NPU_TARGET=bin/cim
+
 # Compiler environment of CUDA
 NVCC=nvcc
 CUFLAGS=--compiler-options -Wall -I$(SIMULATOR_ROOT)/interchiplet/includes
@@ -23,7 +27,7 @@ CUDA_SRCS = resnet_block.cu resnet.cu
 CUDA_OBJS = $(patsubst %.cu, cuobj/%.o, $(CUDA_SRCS))
 CUDA_TARGET = bin/resnet_cu
 
-all: bin_dir obj_dir cuobj_dir C_target CUDA_target
+all: bin_dir obj_dir cuobj_dir C_target CUDA_target NPU_target
 
 # C language target
 C_target: $(C_OBJS)
@@ -32,6 +36,10 @@ C_target: $(C_OBJS)
 # CUDA language target
 CUDA_target: $(CUDA_OBJS)
 	$(NVCC) -L$(SIMULATOR_ROOT)/gpgpu-sim/lib/$(GPGPUSIM_CONFIG) -g --cudart shared $(CUDA_OBJS) -o $(CUDA_TARGET)
+
+# NPU language target
+NPU_target: $(NPU_OBJS)
+	$(CC) $(NPU_OBJS) $(INTERCHIPLET_C_LIB) -o $(NPU_TARGET)
 
 # Rule for C object
 obj/%.o: %.cpp
@@ -54,7 +62,7 @@ cuobj_dir:
 	mkdir -p cuobj
 
 run:
-	$(INTERCHIPLET) resnet.yml > interchiplet.log 2>&1 &
+	$(INTERCHIPLET) resnet.yml
 
 gdb:
 	cuda-gdb $(CUDA_TARGET)

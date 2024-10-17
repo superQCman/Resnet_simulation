@@ -241,16 +241,21 @@ int main(int argc, char** argv)
     idX = atoi(argv[1]);
     idY = atoi(argv[2]);
     batch = atoi(argv[3]);
-    int width=56,height=56,channels=64;
+    int originalWidth = 112, originalHeight = 112, channels = 64;
+    int width=56,height=56;
     int out_width_first = 56, out_height_first = 56, out_channels_first = 256;
     int out_width_sec = 28, out_height_sec = 28, out_channels_sec = 512;
     int out_width_third = 14, out_height_third = 14, out_channels_third = 1024;
     int out_width_forth = 7, out_height_forth = 7, out_channels_forth = 2048;
+
+    int original_size = originalWidth * originalHeight * channels;
     int size=width*height*channels;
     int size_out_first=out_width_first*out_height_first*out_channels_first;
     int size_out_second=out_width_sec*out_height_sec*out_channels_sec;
     int size_out_third=out_width_third*out_height_third*out_channels_third;
     int size_out_forth=out_width_forth*out_height_forth*out_channels_forth;
+
+    int64_t* original_M=new int64_t[original_size];
     int64_t* M=new int64_t[size];
     int64_t* M_out_first=new int64_t[size_out_first];
     int64_t* M_send_second=new int64_t[size_out_first];
@@ -259,9 +264,16 @@ int main(int argc, char** argv)
     int64_t* M_out_third=new int64_t[size_out_third];
     int64_t* M_send_forth=new int64_t[size_out_third];
     int64_t* M_out_forth=new int64_t[size_out_forth];
-    for (int i = 0; i < size; i++) {
-        M[i] = (rand() % 255)*1e4;
+    for (int i = 0; i < original_size; i++) {
+        original_M[i] = (rand() % 255)*1e4;
     }
+    
+    // 发送原始图像数据
+    InterChiplet::sendMessage(1, 0, idX, idY, original_M, original_size * sizeof(int64_t));
+    std::cout<<"---------------------------------------发送原始图像数据完成---------------------------------------"<<std::endl;
+    // 读取原始图像数据
+    InterChiplet::receiveMessage(idX, idY, 1, 0, M, size* sizeof(int64_t));
+    std::cout<<"---------------------------------------读取修改图像数据完成---------------------------------------"<<std::endl;
     // 创建并启动线程
     std::thread send_first_thread(send_first, idX, idY, M, size* sizeof(int64_t));
     std::thread read_first_thread(read_first, idX, idY, M_out_first, size_out_first* sizeof(int64_t));
